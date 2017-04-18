@@ -11,7 +11,7 @@ class MYSQL_control
     private $connection;
 
     private $myhash = ''; // Encryption Hash for user pass 
-    private  $myurlhash =  ''; // Encryption Hash for URL (helps prevent injection attacks)
+    //private  $myurlhash =  ''; // Encryption Hash for URL (helps prevent injection attacks)
     
     
     // Constructor
@@ -24,7 +24,7 @@ class MYSQL_control
         if($connection->connect_error) die($connection ->connect_error);
          
     }
-
+    // Create table
     function createTable($name, $query)
     {
         queryMysql("CREATE TABLE IF NOT EXISTS $name($query)");
@@ -33,7 +33,8 @@ class MYSQL_control
 
 
     }
-
+    // execute query
+    // returns a $result
     function queryMysql($query)
     {
         
@@ -42,6 +43,7 @@ class MYSQL_control
         return $result;
 
     }
+    // Kill SQL session connection
     function destroySession()
     {
         $_SESSION = array();
@@ -51,7 +53,7 @@ class MYSQL_control
 
         session_destroy();
     }
-
+    // sanatize user input to preven injection
     function sanitizerString($var)
     {
         //global $connection;
@@ -62,7 +64,7 @@ class MYSQL_control
 
     }
 
-
+    // check user plaintext pass against our created hash. You must hash password then store in data base
     function verify_password_hash($strPassword, $strHash)
     {
         if (function_exists('password_verify')) {
@@ -74,6 +76,9 @@ class MYSQL_control
         }
         return $boolReturn;
     }
+    
+    
+    // Safely get our password hash
     function getHash()
     {
         
@@ -83,77 +88,42 @@ class MYSQL_control
     
     //////////////////////////////////////////////////////////////////////////////////////////////
     
-     function verify_url_hash($strPassword, $strHash)
-    {
-        if (function_exists('password_verify')) {
-            // php >= 5.5
-            $boolReturn = password_verify($strPassword, $strHash);
-        } else {
-            $strHash2 = crypt($strPassword, $strHash);
-            $boolReturn = $strHash == $strHash2;
-        }
-        return $boolReturn;
-    }
-      function geturlHash()
-    {
-        
-        return $this->myurlhash;
-    }
+    
+   
  
-    
-  function encrypt_url($string) {
-  $key = "MAL_979805"; //key to encrypt and decrypts.
-  $result = '';
-  $test = "";
-   for($i=0; $i<strlen($string); $i++) {
-     $char = substr($string, $i, 1);
-     $keychar = substr($key, ($i % strlen($key))-1, 1);
-     $char = chr(ord($char)+ord($keychar));
+    // Encrypt our url -> id=1 Will be converted into a hashed pass. We then decrypt it and use it
+      function encrypt_url($string) 
+      {
+          $key = "MAL_979805"; //key to encrypt and decrypts.
+          $result = '';
+          $test = "";
+           for($i=0; $i<strlen($string); $i++) 
+           {
+             $char = substr($string, $i, 1);
+             $keychar = substr($key, ($i % strlen($key))-1, 1);
+             $char = chr(ord($char)+ord($keychar));
 
-     $test[$char]= ord($char)+ord($keychar);
-     $result.=$char;
-   }
+             $test[$char]= ord($char)+ord($keychar);
+             $result.=$char;
+           }
 
-   return urlencode(base64_encode($result));
-}
-function decrypt_url($string) {
-    $key = "MAL_979805"; //key to encrypt and decrypts.
-    $result = '';
-    $string = base64_decode(urldecode($string));
-   for($i=0; $i<strlen($string); $i++) {
-     $char = substr($string, $i, 1);
-     $keychar = substr($key, ($i % strlen($key))-1, 1);
-     $char = chr(ord($char)-ord($keychar));
-     $result.=$char;
-   }
-   return $result;
-}
+           return urlencode(base64_encode($result));
+        }
+        function decrypt_url($string) 
+        {
+                $key = "MAL_979805"; //key to encrypt and decrypts.
+                $result = '';
+                $string = base64_decode(urldecode($string));
+               for($i=0; $i<strlen($string); $i++) 
+               {
+                 $char = substr($string, $i, 1);
+                 $keychar = substr($key, ($i % strlen($key))-1, 1);
+                 $char = chr(ord($char)-ord($keychar));
+                 $result.=$char;
+               }
+               return $result;
+        }
 
-function getClientName($ClientID)
-{
-    
-    /// check if client ID exist if not return 0
-    
-    
-    $result = $this->queryMysql("SELECT * FROM Client where ClientID=$ClientID");
-    
-    if($result->num_rows == 1)
-    {
-        $row = $result->fetch_assoc();
-        
-        $temp = $row['Name'];
-        return $temp;
-        
-        
-    }
-    else
-    {
-        return 0;
-    }
-    
-    
-    
-}
 
 }
 
